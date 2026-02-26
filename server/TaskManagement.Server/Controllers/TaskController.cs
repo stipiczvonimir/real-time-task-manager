@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Server.Data;
 using TaskManagement.Server.Models;
+using TaskManagement.Server.Hubs;
 
 namespace TaskManagement.Server.Controllers;
 
@@ -10,10 +12,12 @@ namespace TaskManagement.Server.Controllers;
 public class TasksController : ControllerBase
 {
     private readonly TasksDbContext _db;
+    private readonly IHubContext<TasksHub> _hub;
 
-    public TasksController(TasksDbContext db)
+    public TasksController(TasksDbContext db, IHubContext<TasksHub> hub)
     {
         _db = db;
+        _hub = hub;
     }
 
     [HttpGet]
@@ -55,6 +59,8 @@ public class TasksController : ControllerBase
         _db.Tasks.Add(task);
         await _db.SaveChangesAsync();
 
+        await _hub.Clients.All.SendAsync("Task created", task);
+
         return CreatedAtAction(nameof(GetById), new { id = task.Id }, task);
     }
 
@@ -89,6 +95,9 @@ public class TasksController : ControllerBase
         task.UpdatedAt = DateTime.Now;
 
         await _db.SaveChangesAsync();
+
+        await _hub.Clients.All.SendAsync("Task changed", task);
+
         return Ok(task);
     }
 
@@ -100,7 +109,10 @@ public class TasksController : ControllerBase
             return NotFound();
 
         _db.Tasks.Remove(task);
+
         await _db.SaveChangesAsync();
+
+        await _hub.Clients.All.SendAsync("Task deleted", task);
 
         return NoContent();
     }
