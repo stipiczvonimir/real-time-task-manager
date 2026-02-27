@@ -1,0 +1,60 @@
+body {
+    font-family: system-ui, Arial, sans-serif;
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.row {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+
+input,
+select,
+button {
+    padding: .5rem;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+th,
+td {
+    border-bottom: 1px solid #ddd;
+    padding: .6rem;
+    text-align: left;
+    vertical-align: middle;
+}
+
+th:nth-child(4),
+td:nth-child(4) {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.muted {
+    color: #666;
+    font-size: .9rem;
+}
+
+.badge {
+    padding: .15rem .5rem;
+    border: 1px solid #ccc;
+    border-radius: 999px;
+    display: inline-block;
+}
+
+.badge-inprogress {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.badge-done {
+    background-color: #d4edda;
+    color: #155724;
+}
