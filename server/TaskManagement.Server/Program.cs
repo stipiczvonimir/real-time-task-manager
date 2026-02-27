@@ -14,6 +14,16 @@ builder.Services.AddSignalR();
 builder.Services.AddDbContext<TasksDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("Default")));
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("DevCors", policy =>
+        policy
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials()
+            .SetIsOriginAllowed(_ => true));
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -23,6 +33,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("DevCors");
 
 app.MapControllers();
 
