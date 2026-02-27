@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Server.Data;
 using TaskManagement.Server.Hubs;
+using TaskManagement.Server.Ipc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 
 builder.Services.AddSignalR();
+
+builder.Services.AddHostedService<NamedPipeIpcService>();
 
 builder.Services.AddDbContext<TasksDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("Default")));
