@@ -48,6 +48,13 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editStatus, setEditStatus] = useState<(typeof STATUSES)[number]>("TODO");
+
+  const [saving, setSaving] = useState(false);
+
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const startingRef = useRef(false);
 
@@ -97,6 +104,69 @@ function App() {
       startingRef.current = false;
     };
   }, [loadTasks, startSignalR]);
+
+  const deleteTask = useCallback(async (id: number) => {
+    const ok = window.confirm("Delete this task?");
+    if (!ok) return;
+
+    try {
+      setError(null);
+
+      const res = await fetch(`${API_BASE}/api/tasks/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error(`Failed to delete task: ${res.status}`);
+
+    } catch (e: any) {
+      setError(e?.message ?? "Failed to delete task");
+    }
+  }, [API_BASE, loadTasks]);
+
+  const beginEdit = useCallback((t: TaskItem) => {
+    setEditingId(t.id);
+    setEditTitle(t.title ?? "");
+    setEditDescription(t.description ?? "");
+    setEditStatus(formatStatus(t.status) as (typeof STATUSES)[number]);
+  }, []);
+
+  const cancelEdit = useCallback(() => {
+    setEditingId(null);
+    setEditTitle("");
+    setEditDescription("");
+    setEditStatus("TODO");
+  }, []);
+
+  const saveEdit = useCallback(async (id: number) => {
+    try {
+      setError(null);
+      setSaving(true);
+
+      const payload = {
+        title: editTitle.trim(),
+        description: editDescription.trim() ? editDescription.trim() : null,
+        status: editStatus,
+      };
+
+      if (!payload.title) throw new Error("Title is required.");
+
+      const res = await fetch(`${API_BASE}/api/tasks/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error(`Failed to update task: ${res.status}`);
+
+      await loadTasks();
+
+      cancelEdit();
+    } catch (e: any) {
+      setError(e?.message ?? "Failed to update task");
+    } finally {
+      setSaving(false);
+    }
+  }, [API_BASE, editTitle, editDescription, editStatus, loadTasks, cancelEdit]);
 
   const [sortByStatus, setSortByStatus] = useState<
     Record<(typeof STATUSES)[number], SortOption>
@@ -176,17 +246,77 @@ function App() {
             </div>
 
             <ul className="task-list">
-              {grouped[status].map((t) => (
-                <li key={t.id} className="task-card">
-                  <div className="task-title">{t.title}</div>
+              {grouped[status].map((t) => {
+                const isEditing = editingId === t.id;
 
-                  {t.description && <div>{t.description}</div>}
+                return (
+                  <li key={t.id} className="task-card">
+                    <div className="task-content">
+                      <div className="task-title">{t.title}</div>
 
-                  <div className="task-meta">
-                    Status: {t.status}
-                  </div>
-                </li>
-              ))}
+                      {!isEditing ? (
+                        <>
+                          {t.description && <div>{t.description}</div>}
+                          <div className="task-meta">Status: {t.status}</div>
+                        </>
+                      ) : (
+                        <div className="task-edit">
+                          <input
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            placeholder="Title"
+                          />
+
+                          <textarea
+                            value={editDescription}
+                            onChange={(e) => setEditDescription(e.target.value)}
+                            placeholder="Description"
+                            rows={3}
+                          />
+
+                          <select
+                            value={editStatus}
+                            onChange={(e) => setEditStatus(e.target.value as any)}
+                          >
+                            {STATUSES.map((s) => (
+                              <option key={s} value={s}>
+                                {s}
+                              </option>
+                            ))}
+                          </select>
+
+                          <div className="task-edit-actions">
+                            <button type="button" onClick={cancelEdit}>
+                              Cancel
+                            </button>
+
+                            <button type="button" onClick={() => saveEdit(t.id)} disabled={saving}>
+                              {saving ? "Saving…" : "Save"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {!isEditing && (
+                      <div className="task-actions">
+                        <button type="button" onClick={() => beginEdit(t)} disabled={saving}>
+                          Edit
+                        </button>
+
+                        <button
+                          type="button"
+                          className="delete"
+                          onClick={() => deleteTask(t.id)}
+                          disabled={saving}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
 
           </div>
