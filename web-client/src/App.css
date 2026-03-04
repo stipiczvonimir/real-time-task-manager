@@ -40,3 +40,53 @@
 .read-the-docs {
   color: #888;
 }
+
+.app {
+  max-width: 1400px;
+  margin: 40px auto;
+  padding: 0 16px;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(400px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.column {
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.column-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-weight: 800;
+}
+
+.task-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.task-card {
+  border: 1px solid rgb(255 255 255 / 25%);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.task-title {
+  font-weight: 700;
+}
+
+.task-meta {
+  margin-top: 6px;
+  font-size: 12px;
+  opacity: 0.7;
+}

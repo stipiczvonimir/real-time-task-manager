@@ -11,6 +11,14 @@ type TaskItem = {
   updatedAt: string;
 }
 
+const STATUSES = ["TODO", "IN PROGRESS", "DONE"] as const;
+
+function formatStatus(s: string) {
+  const v = (s ?? "").trim().toUpperCase();
+  if (v === "IN_PROGRESS" || v === "IN-PROGRESS") return "IN PROGRESS";
+  return v;
+}
+
 function App() {
   const API_BASE = import.meta.env.VITE_API_BASE as string;
   const HUB_URL = `${API_BASE}/hubs/tasks`;
@@ -64,33 +72,50 @@ function App() {
     };
   }, []);
 
+  const grouped: Record<string, TaskItem[]> = {
+    "TODO": [],
+    "IN PROGRESS": [],
+    "DONE": [],
+  };
 
-return (
-  <div style={{ maxWidth: 300, margin: "40px auto"}}>
-    <h1>Tasks</h1>
+  for (const t of tasks) {
+    const key = formatStatus(t.status);
+    (grouped[key] ?? grouped["TODO"]).push(t);
+  }
 
-    {loading && <div>Loading…</div>}
-    {error && <div style={{ color: "red" }}>{error}</div>}
 
-    <ul style={{ listStyle: "none", padding: 0, display: "grid", gap: 10 }}>
-      {tasks.map((t) => (
-        <li key={t.id} style={{ border: "1px solid #fff", borderRadius: 10, padding: 12 }}>
-          <div style={{ fontWeight: 700 }}>{t.title}</div>
-          {t.description ? <div>{t.description}</div> : null}
-          <div style={{ marginTop: 6, fontSize: 12, opacity: 0.7 }}>
-            Status: {t.status} 
-          </div>
-          <div style={{ marginTop: 6, fontSize: 12, opacity: 0.7}}>
-            Created: {new Date(t.createdAt).toLocaleString('en-GB',{timeZone: 'CET',})}
-          </div>
-          <div style={{ marginTop: 6, fontSize: 12, opacity: 0.7}}>
-            Updated: {new Date(t.updatedAt).toLocaleString('en-GB',{timeZone: 'CET',})}
-          </div>
-        </li>
-      ))}
-    </ul>
+  return (
+    <div className="app">
+  <h1>Tasks</h1>
+
+  <div className="board">
+    {STATUSES.map((status) => (
+      <div key={status} className="column">
+
+        <div className="column-header">
+          <span>{status}</span>
+          <span> {grouped[status].length}</span>
+        </div>
+
+        <ul className="task-list">
+          {grouped[status].map((t) => (
+            <li key={t.id} className="task-card">
+              <div className="task-title">{t.title}</div>
+
+              {t.description && <div>{t.description}</div>}
+
+              <div className="task-meta">
+                Status: {t.status}
+              </div>
+            </li>
+          ))}
+        </ul>
+
+      </div>
+    ))}
   </div>
-);
+</div>
+  );
 }
 
 export default App
