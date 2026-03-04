@@ -19,6 +19,27 @@ function formatStatus(s: string) {
   return v;
 }
 
+type SortKey = "updatedAt" | "createdAt" | "title";
+type SortDir = "asc" | "desc";
+type SortOption = { key: SortKey; dir: SortDir };
+
+const DEFAULT_SORT: SortOption = { key: "updatedAt", dir: "desc" };
+
+function compare(a: TaskItem, b: TaskItem, opt: SortOption) {
+  const { key, dir } = opt;
+  let result = 0;
+
+  if (key === "title") {
+    result = a.title.localeCompare(b.title);
+  } else {
+    const ta = Date.parse(a[key]);
+    const tb = Date.parse(b[key]);
+    result = ta - tb;
+  }
+
+  return dir === "asc" ? result : -result;
+}
+
 function App() {
   const API_BASE = import.meta.env.VITE_API_BASE as string;
   const hubUrl = useMemo(() => `${API_BASE}/hubs/tasks`, [API_BASE]);
@@ -71,11 +92,19 @@ function App() {
     })();
 
     return () => {
-      connectionRef.current?.stop().catch(() => {});
+      connectionRef.current?.stop().catch(() => { });
       connectionRef.current = null;
       startingRef.current = false;
     };
   }, [loadTasks, startSignalR]);
+
+  const [sortByStatus, setSortByStatus] = useState<
+    Record<(typeof STATUSES)[number], SortOption>
+  >({
+    "TODO": DEFAULT_SORT,
+    "IN PROGRESS": DEFAULT_SORT,
+    "DONE": DEFAULT_SORT,
+  });
 
   const grouped = useMemo(() => {
     const map: Record<(typeof STATUSES)[number], TaskItem[]> = {
@@ -88,44 +117,82 @@ function App() {
       const key = formatStatus(t.status) as (typeof STATUSES)[number];
       (map[key] ?? map["TODO"]).push(t);
     }
+
+    for (const status of STATUSES) {
+      const opt = sortByStatus[status];
+      map[status] = [...map[status]].sort((a, b) => compare(a, b, opt));
+    }
     return map;
-  }, [tasks]);
+  }, [tasks, sortByStatus]);
 
 
   return (
     <div className="app">
-  <h1>Tasks</h1>
+      <h1>Tasks</h1>
 
-  {loading && <div>Loading…</div>}
-  {error && <div style={{ color: "red" }}>{error}</div>}
+      {loading && <div>Loading…</div>}
+      {error && <div style={{ color: "red" }}>{error}</div>}
 
-  <div className="board">
-    {STATUSES.map((status) => (
-      <div key={status} className="column">
+      <div className="board">
+        {STATUSES.map((status) => (
+          <div key={status} className="column">
 
-        <div className="column-header">
-          <span>{status}</span>
-          <span> {grouped[status].length}</span>
-        </div>
+            <div className="column-header">
+              <span>{status} ({grouped[status].length})</span>
+              <div className="sort-controls">
+                <select
+                  className="sort-select"
+                  value={sortByStatus[status].key}
+                  onChange={(e) =>
+                    setSortByStatus((prev) => ({
+                      ...prev,
+                      [status]: { ...prev[status], key: e.target.value as SortKey },
+                    }))
+                  }
+                >
+                  <option value="updatedAt">Updated</option>
+                  <option value="createdAt">Created</option>
+                  <option value="title">Title</option>
+                </select>
 
-        <ul className="task-list">
-          {grouped[status].map((t) => (
-            <li key={t.id} className="task-card">
-              <div className="task-title">{t.title}</div>
-
-              {t.description && <div>{t.description}</div>}
-
-              <div className="task-meta">
-                Status: {t.status}
+                <button
+                  type="button"
+                  className="sort-dir"
+                  onClick={() =>
+                    setSortByStatus((prev) => ({
+                      ...prev,
+                      [status]: {
+                        ...prev[status],
+                        dir: prev[status].dir === "asc" ? "desc" : "asc",
+                      },
+                    }))
+                  }
+                  aria-label="Toggle sort direction"
+                  title="Toggle sort direction"
+                >
+                  {sortByStatus[status].dir === "asc" ? "↑" : "↓"}
+                </button>
               </div>
-            </li>
-          ))}
-        </ul>
+            </div>
 
+            <ul className="task-list">
+              {grouped[status].map((t) => (
+                <li key={t.id} className="task-card">
+                  <div className="task-title">{t.title}</div>
+
+                  {t.description && <div>{t.description}</div>}
+
+                  <div className="task-meta">
+                    Status: {t.status}
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+          </div>
+        ))}
       </div>
-    ))}
-  </div>
-</div>
+    </div>
   );
 }
 

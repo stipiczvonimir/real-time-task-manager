@@ -90,3 +90,33 @@
   font-size: 12px;
   opacity: 0.7;
 }
+
+.sort-controls {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.sort-select {
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid #000;
+  background-color: #161616;
+  opacity: 55%;
+  font-size: 0.9rem;
+}
+
+.sort-dir {
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid #000;
+  background-color: #161616;
+  cursor: pointer;
+  opacity: 55%;
+  line-height: 1;
+}
+
+.sort-dir:hover {
+  background: #f5f5f5;
+}
