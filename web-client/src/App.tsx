@@ -1,5 +1,6 @@
 import './App.css'
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import * as signalR from "@microsoft/signalr";
 
 type TaskItem = {
   id: number;
@@ -12,37 +13,57 @@ type TaskItem = {
 
 function App() {
   const API_BASE = import.meta.env.VITE_API_BASE as string;
+  const HUB_URL = `${API_BASE}/hubs/tasks`;
 
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-  let cancelled = false;
+  const connectionRef = useRef<signalR.HubConnection | null>(null);
 
-  (async () => {
+  async function loadTasks() {
     try {
-      setLoading(true);
       setError(null);
 
       const res = await fetch(`${API_BASE}/api/tasks`);
-      if (!res.ok) throw new Error(`Get /api/tasks failed: ${res.status}`);
+      if (!res.ok) throw new Error("Failed to load tasks");
 
       const data: TaskItem[] = await res.json();
-      if (!cancelled)
-        setTasks(data);
+      setTasks(data);
     } catch (e: any) {
-      if (!cancelled)
-        setError(e?.message ?? "FAiled to load tasks");
+      setError(e?.message ?? "Failed to load tasks");
     } finally {
-      if (!cancelled) setLoading(false);
+      setLoading(false);
     }
-  })();
+  }
 
-  return () => {
-    cancelled = true;
-  };
-}, [API_BASE]);
+  async function startSignalR() {
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl(HUB_URL)
+      .withAutomaticReconnect()
+      .build();
+
+    connection.on("Task created", loadTasks);
+    connection.on("Task changed", loadTasks);
+    connection.on("Task deleted", loadTasks);
+
+    await connection.start();
+    console.log("SignalR connected");
+
+    connectionRef.current = connection;
+  }
+
+  useEffect(() => {
+    (async () => {
+      await loadTasks();
+      await startSignalR();
+    })();
+
+    return () => {
+      connectionRef.current?.stop();
+    };
+  }, []);
+
 
 return (
   <div style={{ maxWidth: 300, margin: "40px auto"}}>
