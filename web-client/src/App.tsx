@@ -1,5 +1,5 @@
-import './App.css'
-import { useEffect, useState, useRef } from "react";
+import './App.css';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as signalR from "@microsoft/signalr";
 
 type TaskItem = {
@@ -21,20 +21,20 @@ function formatStatus(s: string) {
 
 function App() {
   const API_BASE = import.meta.env.VITE_API_BASE as string;
-  const HUB_URL = `${API_BASE}/hubs/tasks`;
+  const hubUrl = useMemo(() => `${API_BASE}/hubs/tasks`, [API_BASE]);
 
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const connectionRef = useRef<signalR.HubConnection | null>(null);
+  const startingRef = useRef(false);
 
-  async function loadTasks() {
+  const loadTasks = useCallback(async () => {
     try {
       setError(null);
-
       const res = await fetch(`${API_BASE}/api/tasks`);
-      if (!res.ok) throw new Error("Failed to load tasks");
+      if (!res.ok) throw new Error(`Failed to load tasks: ${res.status}`);
 
       const data: TaskItem[] = await res.json();
       setTasks(data);
@@ -43,11 +43,14 @@ function App() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [API_BASE]);
 
-  async function startSignalR() {
+  const startSignalR = useCallback(async () => {
+    if (connectionRef.current || startingRef.current) return;
+    startingRef.current = true;
+
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl(HUB_URL)
+      .withUrl(hubUrl)
       .withAutomaticReconnect()
       .build();
 
@@ -56,10 +59,10 @@ function App() {
     connection.on("Task deleted", loadTasks);
 
     await connection.start();
-    console.log("SignalR connected");
-
     connectionRef.current = connection;
-  }
+
+    console.log("SignalR connected");
+  }, [hubUrl, loadTasks]);
 
   useEffect(() => {
     (async () => {
@@ -68,25 +71,33 @@ function App() {
     })();
 
     return () => {
-      connectionRef.current?.stop();
+      connectionRef.current?.stop().catch(() => {});
+      connectionRef.current = null;
+      startingRef.current = false;
     };
-  }, []);
+  }, [loadTasks, startSignalR]);
 
-  const grouped: Record<string, TaskItem[]> = {
-    "TODO": [],
-    "IN PROGRESS": [],
-    "DONE": [],
-  };
+  const grouped = useMemo(() => {
+    const map: Record<(typeof STATUSES)[number], TaskItem[]> = {
+      "TODO": [],
+      "IN PROGRESS": [],
+      "DONE": [],
+    };
 
-  for (const t of tasks) {
-    const key = formatStatus(t.status);
-    (grouped[key] ?? grouped["TODO"]).push(t);
-  }
+    for (const t of tasks) {
+      const key = formatStatus(t.status) as (typeof STATUSES)[number];
+      (map[key] ?? map["TODO"]).push(t);
+    }
+    return map;
+  }, [tasks]);
 
 
   return (
     <div className="app">
   <h1>Tasks</h1>
+
+  {loading && <div>Loading…</div>}
+  {error && <div style={{ color: "red" }}>{error}</div>}
 
   <div className="board">
     {STATUSES.map((status) => (
