@@ -114,7 +114,9 @@ public sealed class NamedPipeIpcService : BackgroundService
                 {
                     Title = req.Title.Trim(),
                     Description = req.Description?.Trim(),
-                    Status = string.IsNullOrWhiteSpace(req.Status) ? "TODO" : req.Status.Trim(),
+                    Status = string.IsNullOrWhiteSpace(req.Status)
+                        ? TaskItemStatus.TODO
+                        : Enum.Parse<TaskItemStatus>(req.Status.Trim(), true),
                     CreatedAt = now,
                     UpdatedAt = now
                 };
@@ -152,7 +154,7 @@ public sealed class NamedPipeIpcService : BackgroundService
                 {
                     if (string.IsNullOrWhiteSpace(req.Status))
                         return IpcResponse.Fail("Status requiered");
-                    task.Status = req.Status.Trim();
+                    task.Status = Enum.Parse<TaskItemStatus>(req.Status.Trim(), true);
                 }
 
                 task.UpdatedAt = DateTime.Now;

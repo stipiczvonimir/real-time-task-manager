@@ -11,13 +11,8 @@ type TaskItem = {
   updatedAt: string;
 }
 
-const STATUSES = ["TODO", "IN PROGRESS", "DONE"] as const;
+const STATUSES = ["TODO", "IN_PROGRESS", "DONE"] as const;
 
-function formatStatus(s: string) {
-  const v = (s ?? "").trim().toUpperCase();
-  if (v === "IN_PROGRESS" || v === "IN-PROGRESS") return "IN PROGRESS";
-  return v;
-}
 
 type SortKey = "updatedAt" | "createdAt" | "title";
 type SortDir = "asc" | "desc";
@@ -66,6 +61,8 @@ function App() {
 
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const startingRef = useRef(false);
+
+  const labelStatus = (s: string) => s.replaceAll("_", " ");
 
   const loadTasks = useCallback(async () => {
     try {
@@ -167,7 +164,7 @@ function App() {
     setEditingId(t.id);
     setEditTitle(t.title ?? "");
     setEditDescription(t.description ?? "");
-    setEditStatus(formatStatus(t.status) as (typeof STATUSES)[number]);
+    setEditStatus(t.status as (typeof STATUSES)[number]);
   }, []);
 
   const cancelEdit = useCallback(() => {
@@ -212,19 +209,19 @@ function App() {
     Record<(typeof STATUSES)[number], SortOption>
   >({
     "TODO": DEFAULT_SORT,
-    "IN PROGRESS": DEFAULT_SORT,
+    "IN_PROGRESS": DEFAULT_SORT,
     "DONE": DEFAULT_SORT,
   });
 
   const grouped = useMemo(() => {
     const map: Record<(typeof STATUSES)[number], TaskItem[]> = {
       "TODO": [],
-      "IN PROGRESS": [],
+      "IN_PROGRESS": [],
       "DONE": [],
     };
 
     for (const t of tasks) {
-      const key = formatStatus(t.status) as (typeof STATUSES)[number];
+      const key = t.status as (typeof STATUSES)[number];
       (map[key] ?? map["TODO"]).push(t);
     }
 
@@ -284,7 +281,7 @@ function App() {
             >
               {STATUSES.map((s) => (
                 <option key={s} value={s}>
-                  {s}
+                  {labelStatus(s)}
                 </option>
               ))}
             </select>
@@ -325,7 +322,7 @@ function App() {
           <div key={status} className="column">
 
             <div className="column-header">
-              <span>{status} ({grouped[status].length})</span>
+              <span>{labelStatus(status)} ({grouped[status].length})</span>
               <div className="sort-controls">
                 <select
                   className="sort-select"
@@ -374,7 +371,7 @@ function App() {
                       {!isEditing ? (
                         <>
                           {t.description && <div>{t.description}</div>}
-                          <div className="task-meta">Status: {t.status}</div>
+                          <div className="task-meta">Status: {labelStatus(status)}</div>
                         </>
                       ) : (
                         <div className="task-edit">
@@ -397,7 +394,7 @@ function App() {
                           >
                             {STATUSES.map((s) => (
                               <option key={s} value={s}>
-                                {s}
+                                {labelStatus(s)}
                               </option>
                             ))}
                           </select>
