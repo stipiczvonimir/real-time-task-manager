@@ -6,5 +6,5 @@ appsettings.Development.json
 *.bin
 web-client/node_modules
 *.db
-*.db-sha
+*.db-shm
 *.db-wal
