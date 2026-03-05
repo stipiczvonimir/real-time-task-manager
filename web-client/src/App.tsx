@@ -12,7 +12,20 @@ type TaskItem = {
 }
 
 const STATUSES = ["TODO", "IN_PROGRESS", "DONE"] as const;
+type Status = (typeof STATUSES)[number];
 
+function normalizeStatus(raw: unknown): Status {
+  const s = String(raw ?? "").trim();
+
+  if ((STATUSES as readonly string[]).includes(s)) return s as Status;
+
+  const compact = s.replaceAll(" ", "").replaceAll("_", "").replaceAll("-", "").toLowerCase();
+  if (compact === "todo") return "TODO";
+  if (compact === "inprogress") return "IN_PROGRESS";
+  if (compact === "done") return "DONE";
+
+  return "TODO";
+}
 
 type SortKey = "updatedAt" | "createdAt" | "title";
 type SortDir = "asc" | "desc";
@@ -74,12 +87,8 @@ function App() {
 
       const normalized = data.map(t => ({
         ...t,
-        status:
-          t.status === "InProgress" ? "IN_PROGRESS" :
-            t.status === "Done" ? "DONE" :
-              "TODO"
+        status: normalizeStatus(t.status),
       }));
-
       setTasks(normalized);
     } catch (e: any) {
       setError(e?.message ?? "Failed to load tasks");
@@ -173,7 +182,7 @@ function App() {
     setEditingId(t.id);
     setEditTitle(t.title ?? "");
     setEditDescription(t.description ?? "");
-    setEditStatus(t.status as (typeof STATUSES)[number]);
+    setEditStatus(normalizeStatus(t.status));
   }, []);
 
   const cancelEdit = useCallback(() => {

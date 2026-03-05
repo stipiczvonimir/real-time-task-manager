@@ -9,7 +9,7 @@ PIPE_NAME = r"\\.\pipe\taskmanagement-ipc"
 
 STATUS_MAP = {
     0: "TODO",
-    1: "InProgress",
+    1: "IN_PROGRESS",
     2: "Done"
 }
 
@@ -98,10 +98,34 @@ def print_response(resp: dict):
 
 
 def validate_status(s: str) -> str:
-    allowed = {"TODO", "InProgress", "Done"}
-    if s not in allowed:
-        raise argparse.ArgumentTypeError(f"Invalid status '{s}'. Allowed: {', '.join(sorted(allowed))}")
-    return s
+    if s is None:
+        return s
+
+    raw = s.strip()
+
+    aliases = {
+        "TODO": "TODO",
+        "IN_PROGRESS": "IN_PROGRESS",
+        "DONE": "DONE",
+        "InProgress": "IN_PROGRESS",
+        "Done": "DONE",
+    }
+
+    if raw in aliases:
+        return aliases[raw]
+
+    compact = raw.replace("_", "").replace("-", "").replace(" ", "").lower()
+    if compact == "todo":
+        return "TODO"
+    if compact == "inprogress":
+        return "IN_PROGRESS"
+    if compact == "done":
+        return "DONE"
+
+    allowed = ["TODO", "IN_PROGRESS", "DONE"]
+    raise argparse.ArgumentTypeError(
+        f"Invalid status '{s}'. Allowed: {', '.join(allowed)} (also accepts InProgress, Done)"
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -116,13 +140,13 @@ def build_parser() -> argparse.ArgumentParser:
     pc = sub.add_parser("create", help="Create a task")
     pc.add_argument("--title", required=True, help="Task title")
     pc.add_argument("--description", default="", help="Task description (optional)")
-    pc.add_argument("--status", type=validate_status, help="Task status (TODO/InProgress/Done)")
+    pc.add_argument("--status", type=validate_status, help="Task status (TODO/IN_PROGRESS/Done)")
 
     pu = sub.add_parser("update", help="Update a task")
     pu.add_argument("--id", type=int, required=True, help="Task ID")
     pu.add_argument("--title", help="New title")
     pu.add_argument("--description", help="New description")
-    pu.add_argument("--status", type=validate_status, help="New status (TODO/InProgress/Done)")
+    pu.add_argument("--status", type=validate_status, help="New status (TODO/IN_PROGRESS/Done)")
 
     pd = sub.add_parser("delete", help="Delete a task")
     pd.add_argument("--id", type=int, required=True, help="Task ID to delete")
