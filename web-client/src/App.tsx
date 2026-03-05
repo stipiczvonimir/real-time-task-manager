@@ -71,7 +71,16 @@ function App() {
       if (!res.ok) throw new Error(`Failed to load tasks: ${res.status}`);
 
       const data: TaskItem[] = await res.json();
-      setTasks(data);
+
+      const normalized = data.map(t => ({
+        ...t,
+        status:
+          t.status === "InProgress" ? "IN_PROGRESS" :
+            t.status === "Done" ? "DONE" :
+              "TODO"
+      }));
+
+      setTasks(normalized);
     } catch (e: any) {
       setError(e?.message ?? "Failed to load tasks");
     } finally {
