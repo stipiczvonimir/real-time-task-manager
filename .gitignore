@@ -5,3 +5,6 @@ appsettings.Development.json
 *db
 *.bin
 web-client/node_modules
+*.db
+*.db-sha
+*.db-wal

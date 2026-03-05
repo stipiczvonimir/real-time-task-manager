@@ -52,6 +52,18 @@
   gap: 12px;
 }
 
+.task-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.task-actions button {
+  width: 100%;
+}
+
 .task-content {
   flex: 1;
   text-align: left;
