@@ -3,3 +3,5 @@ obj/
 appsettings.Development.json
 **/Data/
 *db
+*.bin
+web-client/node_modules
