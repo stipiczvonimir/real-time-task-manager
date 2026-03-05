@@ -1,3 +1,7 @@
+html, body, #root {
+  width: 100%;
+}
+
 .app {
   max-width: 1400px;
   margin: 40px auto;
