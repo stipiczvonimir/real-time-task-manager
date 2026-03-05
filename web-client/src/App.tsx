@@ -61,6 +61,9 @@ function App() {
 
   const [saving, setSaving] = useState(false);
 
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [confirmDeleteTitle, setConfirmDeleteTitle] = useState<string>("");
+
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const startingRef = useRef(false);
 
@@ -146,9 +149,6 @@ function App() {
   }, [API_BASE, newTitle, newDescription, newStatus, loadTasks]);
 
   const deleteTask = useCallback(async (id: number) => {
-    const ok = window.confirm("Delete this task?");
-    if (!ok) return;
-
     try {
       setError(null);
 
@@ -235,6 +235,16 @@ function App() {
     return map;
   }, [tasks, sortByStatus]);
 
+  const openDeleteConfirm = useCallback((t: TaskItem) => {
+    setConfirmDeleteId(t.id);
+    setConfirmDeleteTitle(t.title);
+  }, []);
+
+  const closeDeleteConfirm = useCallback(() => {
+    setConfirmDeleteId(null);
+    setConfirmDeleteTitle("");
+  }, []);
+
 
   return (
     <div className="app">
@@ -255,7 +265,7 @@ function App() {
         <div className="create-card">
           <div className="create-form">
             <input
-            autoFocus
+              autoFocus
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               placeholder="Title"
@@ -414,7 +424,7 @@ function App() {
                         <button
                           type="button"
                           className="delete"
-                          onClick={() => deleteTask(t.id)}
+                          onClick={() => openDeleteConfirm(t)}
                           disabled={saving || creating}
                         >
                           Delete
@@ -429,6 +439,52 @@ function App() {
           </div>
         ))}
       </div>
+      {confirmDeleteId !== null && (
+        <div
+          className="modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-title"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) closeDeleteConfirm();
+          }}
+        >
+          <div className="modal">
+            <div className="modal-header" id="delete-title">
+              Delete task?
+            </div>
+
+            <div className="modal-body">
+              Are you sure you want to delete <strong>{confirmDeleteTitle}</strong>?
+              <div className="modal-hint">This can’t be undone.</div>
+            </div>
+
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="cancel-btn"
+                onClick={closeDeleteConfirm}
+                disabled={saving || creating}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                className="btn-danger"
+                onClick={async () => {
+                  if (confirmDeleteId == null) return;
+                  await deleteTask(confirmDeleteId);
+                  closeDeleteConfirm();
+                }}
+                disabled={saving || creating}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
