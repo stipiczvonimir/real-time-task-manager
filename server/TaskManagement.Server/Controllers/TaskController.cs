@@ -71,9 +71,13 @@ public class TasksController : ControllerBase
         if (task is null)
             return NotFound();
 
-        if (request.Status.HasValue)
+        if (request.Title is not null)
         {
-            task.Status = request.Status.Value;
+            var title = request.Title.Trim();
+            if (string.IsNullOrWhiteSpace(title))
+                return BadRequest("Title required");
+
+            task.Title = title;
         }
 
         if (request.Description is not null)
