@@ -51,7 +51,7 @@ public class TasksController : ControllerBase
         {
             Title = request.Title.Trim(),
             Description = request.Description?.Trim(),
-            Status = string.IsNullOrWhiteSpace(request.Status) ? "TODO" : request.Status.Trim(),
+            Status = request.Status ?? TaskItemStatus.TODO,
             CreatedAt = now,
             UpdatedAt = now
         };
@@ -71,12 +71,9 @@ public class TasksController : ControllerBase
         if (task is null)
             return NotFound();
 
-        if (request.Title is not null)
+        if (request.Status.HasValue)
         {
-            if (string.IsNullOrWhiteSpace(request.Title))
-                return BadRequest("Title cannot be empty");
-
-            task.Title = request.Title.Trim();
+            task.Status = request.Status.Value;
         }
 
         if (request.Description is not null)
@@ -84,12 +81,9 @@ public class TasksController : ControllerBase
             task.Description = request.Description.Trim();
         }
 
-        if (request.Status is not null)
+        if (request.Status.HasValue)
         {
-            if (string.IsNullOrWhiteSpace(request.Status))
-                return BadRequest("Status cannot be empty");
-
-            task.Status = request.Status.Trim();
+            task.Status = request.Status.Value;
         }
 
         task.UpdatedAt = DateTime.Now;
@@ -123,13 +117,13 @@ public class TasksController : ControllerBase
     {
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
-        public string? Status { get; set; }
+        public TaskItemStatus? Status { get; set; }
     }
 
     public sealed class UpdateTaskRequest
     {
         public string? Title { get; set; }
         public string? Description { get; set; }
-        public string? Status { get; set; }
+        public TaskItemStatus? Status { get; set; }
     }
 }
