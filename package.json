@@ -1,0 +1,12 @@
+{
+  "name": "real-time-task-manager",
+  "private": true,
+  "scripts": {
+    "web": "cd web && npm run dev",
+    "server": "dotnet run --project server/TaskManagement.Server",
+    "start": "concurrently \"npm run server\" \"npm run web\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
