@@ -2,9 +2,10 @@
   "name": "real-time-task-manager",
   "private": true,
   "scripts": {
-    "web": "cd web && npm run dev",
     "server": "dotnet run --project server/TaskManagement.Server",
-    "start": "concurrently \"npm run server\" \"npm run web\""
+    "web": "cd web-client && npm run dev",
+     "start": "echo Backend: http://localhost:5138 && echo Web UI: http://localhost:5173 && concurrently \"npm run server\" \"npm run web\""
+ 
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
