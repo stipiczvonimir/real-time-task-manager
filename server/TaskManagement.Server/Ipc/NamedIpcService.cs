@@ -108,7 +108,7 @@ public sealed class NamedPipeIpcService : BackgroundService
                 if (string.IsNullOrWhiteSpace(req.Title))
                     return IpcResponse.Fail("Title required");
 
-                var now = DateTime.Now;
+                var now = DateTime.UtcNow;
 
                 var task = new TaskItem
                 {
@@ -157,7 +157,7 @@ public sealed class NamedPipeIpcService : BackgroundService
                     task.Status = Enum.Parse<TaskItemStatus>(req.Status.Trim(), true);
                 }
 
-                task.UpdatedAt = DateTime.Now;
+                task.UpdatedAt = DateTime.UtcNow;
                 await db.SaveChangesAsync(ct);
 
                 await hub.Clients.All.SendAsync("Task changed", task, ct);

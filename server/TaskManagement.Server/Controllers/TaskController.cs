@@ -45,7 +45,7 @@ public class TasksController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Title))
             return BadRequest("Title requiered");
 
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
 
         var task = new TaskItem
         {
@@ -90,7 +90,7 @@ public class TasksController : ControllerBase
             task.Status = request.Status.Value;
         }
 
-        task.UpdatedAt = DateTime.Now;
+        task.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
 
