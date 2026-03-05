@@ -2,9 +2,27 @@ import argparse
 import json
 import sys
 import win32file
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 PIPE_NAME = r"\\.\pipe\taskmanagement-ipc"
 
+STATUS_MAP = {
+    0: "TODO",
+    1: "InProgress",
+    2: "Done"
+}
+
+def format_time(ts):
+    if not ts:
+        return ""
+
+    try:
+        dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        dt = dt.astimezone(ZoneInfo("Europe/Zagreb"))
+        return dt.strftime("%Y-%m-%d %H:%M %Z")
+    except Exception:
+        return ts
 
 def send_request(request: dict) -> dict:
     try:
@@ -30,7 +48,19 @@ def send_request(request: dict) -> dict:
 
     except Exception as e:
         return {"ok": False, "error": f"IPC Error: {e}"}
+    
+def print_task(task: dict):
+    print(f"ID: {task.get('id')}")
+    print(f"Title: {task.get('title')}")
+    print(f"Description: {task.get('description') or ''}")
 
+    status = task.get("status")
+    status = STATUS_MAP.get(status, status)
+    print(f"Status: {status}")
+
+    print(f"Created At: {format_time(task.get('createdAt'))}")
+    print(f"Updated At: {format_time(task.get('updatedAt'))}")
+    print("-" * 30)
 
 def print_response(resp: dict):
     if not isinstance(resp, dict):
@@ -48,19 +78,23 @@ def print_response(resp: dict):
             print("No tasks found.")
             return
 
-        print("=== Tasks ===")
-        for task in data:
-            print(f"ID: {task.get('id')}")
-            print(f"Title: {task.get('title')}")
-            print(f"Description: {task.get('description', '')}")
-            print(f"Status: {task.get('status')}")
-            print("-" * 30)
+        if isinstance(data, list):
+            if not data:
+                print("No tasks found.")
+                return
+
+            print("=== Tasks ===")
+            for task in data:
+                print_task(task)
         return
 
-    if data is not None:
-        print(json.dumps(data, indent=2))
-    else:
-        print("Success.")
+    if isinstance(data, dict) and "id" in data:
+        if any(k in data for k in ("title", "status", "createdAt", "updatedAt")):
+            print("=== Task ===")
+            print_task(data)
+        else:
+            print(f"Task {data['id']} deleted.")
+
 
 
 def validate_status(s: str) -> str:
