@@ -48,6 +48,12 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [showCreate, setShowCreate] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [newStatus, setNewStatus] = useState<(typeof STATUSES)[number]>("TODO");
+  const [creating, setCreating] = useState(false);
+
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
@@ -104,6 +110,40 @@ function App() {
       startingRef.current = false;
     };
   }, [loadTasks, startSignalR]);
+
+  const createTask = useCallback(async () => {
+    try {
+      setError(null);
+      setCreating(true);
+
+      const payload = {
+        title: newTitle.trim(),
+        description: newDescription.trim() ? newDescription.trim() : null,
+        status: newStatus,
+      };
+
+      if (!payload.title) throw new Error("Title is required.");
+
+      const res = await fetch(`${API_BASE}/api/tasks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error(`Failed to create task: ${res.status}`);
+
+      await loadTasks();
+
+      setNewTitle("");
+      setNewDescription("");
+      setNewStatus("TODO");
+      setShowCreate(false);
+    } catch (e: any) {
+      setError(e?.message ?? "Failed to create task");
+    } finally {
+      setCreating(false);
+    }
+  }, [API_BASE, newTitle, newDescription, newStatus, loadTasks]);
 
   const deleteTask = useCallback(async (id: number) => {
     const ok = window.confirm("Delete this task?");
@@ -198,7 +238,74 @@ function App() {
 
   return (
     <div className="app">
-      <h1>Tasks</h1>
+      <div className="app-header">
+        <h1>Tasks</h1>
+
+        <button
+          type="button"
+          className="primary"
+          onClick={() => setShowCreate((v) => !v)}
+          disabled={creating || saving}
+        >
+          {showCreate ? "Close" : "Add task"}
+        </button>
+      </div>
+
+      {showCreate && (
+        <div className="create-card">
+          <div className="create-form">
+            <input
+            autoFocus
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              placeholder="Title"
+            />
+
+            <textarea
+              value={newDescription}
+              onChange={(e) => setNewDescription(e.target.value)}
+              placeholder="Description"
+              rows={3}
+            />
+
+            <select
+              value={newStatus}
+              onChange={(e) => setNewStatus(e.target.value as any)}
+            >
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+
+            <div className="create-actions">
+              <button
+                type="button"
+                className='cancel-btn'
+                onClick={() => {
+                  setShowCreate(false);
+                  setNewTitle("");
+                  setNewDescription("");
+                  setNewStatus("TODO");
+                }}
+                disabled={creating}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                className='create-btn'
+                onClick={createTask}
+                disabled={creating}
+              >
+                {creating ? "Creating…" : "Create"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {loading && <div>Loading…</div>}
       {error && <div style={{ color: "red" }}>{error}</div>}
@@ -300,7 +407,7 @@ function App() {
 
                     {!isEditing && (
                       <div className="task-actions">
-                        <button type="button" onClick={() => beginEdit(t)} disabled={saving}>
+                        <button type="button" onClick={() => beginEdit(t)} disabled={saving || creating}>
                           Edit
                         </button>
 
@@ -308,7 +415,7 @@ function App() {
                           type="button"
                           className="delete"
                           onClick={() => deleteTask(t.id)}
-                          disabled={saving}
+                          disabled={saving || creating}
                         >
                           Delete
                         </button>

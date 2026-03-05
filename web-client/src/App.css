@@ -205,3 +205,86 @@
   justify-content: flex-end;
   gap: 8px;
 }
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+button.primary {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #000;
+  background-color: #161616;
+  cursor: pointer;
+  opacity: 0.85;
+}
+
+button.primary:hover {
+  opacity: 1;
+  background: #f5f5f5;
+  color: #111;
+}
+
+.create-card {
+  margin-top: 14px;
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.create-form {
+  display: grid;
+  gap: 10px;
+  text-align: left;
+}
+
+.create-form input,
+.create-form textarea,
+.create-form select {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #000;
+  background-color: #161616;
+  opacity: 0.75;
+  color: inherit;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.create-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.create-btn {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.create-btn:hover {
+  background: #43a047;
+}
+
+.cancel-btn {
+  background-color: #161616;
+  border: 1px solid #ccc;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.cancel-btn:hover {
+  background: #f5f5f5;
+  color: #111;
+}
